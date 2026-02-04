@@ -57,4 +57,55 @@ def generer_pdf(nom, cao, pos, mat, mach, table, img):
     
     # Entête - Ligne 2 (C'est ici qu'était l'erreur)
     pdf.set_fill_color(240, 240, 240)
-    pdf.cell(40, 8, f" POS N : {pos}",
+    pdf.cell(40, 8, f" POS N : {pos}", 1, 0, "L", fill=True)
+    pdf.cell(75, 8, f" Matiere : {mat}", 1, 0)
+    pdf.cell(75, 8, f" Machine : {mach}", 1, 1)
+    
+    # Espace Croquis
+    pdf.ln(5)
+    if img:
+        img_pil = Image.open(img)
+        img_path = "temp_img.png"
+        img_pil.save(img_path)
+        pdf.image(img_path, x=45, y=60, w=120)
+        pdf.ln(90)
+    else:
+        pdf.cell(190, 60, "ZONE CROQUIS", 1, 1, "C")
+        pdf.ln(5)
+
+    # Tableau
+    pdf.set_font("Arial", "B", 7)
+    widths = [10, 50, 45, 15, 25, 23, 22] 
+    headers = table.columns
+    for i in range(len(headers)):
+        pdf.cell(widths[i], 8, headers[i], 1, 0, "C", fill=True)
+    pdf.ln()
+    
+    pdf.set_font("Arial", "", 7)
+    for index, row in table.iterrows():
+        line_height = 7
+        curr_y = pdf.get_y()
+        for i in range(len(row)):
+            valeur = str(row[i]).replace("⌀", "D.").replace("ø", "d")
+            valeur_propre = valeur.encode('latin-1', 'replace').decode('latin-1')
+            curr_x = pdf.get_x()
+            pdf.multi_cell(widths[i], line_height, valeur_propre, border=1, align="C")
+            pdf.set_xy(curr_x + widths[i], curr_y)
+        pdf.ln(line_height)
+    
+    return pdf.output()
+
+# --- BOUTON FINAL ---
+st.divider()
+if st.button("💾 Générer le PDF"):
+    try:
+        pdf_bytes = generer_pdf(nom_piece, designation_cao, num_pos, matiere, machine, edited_df, image_file)
+        st.success("✅ PDF généré !")
+        st.download_button(
+            label="📥 Télécharger le document",
+            data=bytes(pdf_bytes),
+            file_name=f"CP_{nom_piece}.pdf",
+            mime="application/pdf"
+        )
+    except Exception as e:
+        st.error(f"Erreur de génération : {str(e)}")
