@@ -46,4 +46,18 @@ data = {
     "Outils": ["T1 : Outil à dresser", "T1 : Outil à charioter", "T2 : Outil de finition"],
     "ap (mm)": [2.0, 1.5, 0.5],
     "Surépaisseur (mm)": [0.5, 0.5, 0.0],
-    "Vc (m/min)": [180, 160, 20
+    "Vc (m/min)": [180, 160, 200],
+    "f (mm/tr)": [0.2, 0.25, 0.1]
+}
+df = pd.DataFrame(data)
+edited_df = st.data_editor(df, num_rows="dynamic", use_container_width=True)
+
+# --- FONCTION DE GÉNÉRATION DU PDF ---
+def generer_pdf(nom, cao, pos, mat, mach, table, img):
+    pdf = PDF()
+    pdf.add_page()
+    
+    # Bloc Entête (Largeur totale 190mm)
+    pdf.set_font("Arial", "B", 9)
+    pdf.cell(95, 8, f" Piece : {nom}", 1)
+    pdf.cell(95, 8, f" CAO : {cao}", 1
