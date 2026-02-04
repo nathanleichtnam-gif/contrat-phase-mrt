@@ -9,11 +9,11 @@ st.set_page_config(page_title="Contrat Multi-Positions ENIM", layout="wide")
 # --- CLASSE PDF ---
 class PDF(FPDF):
     def header(self):
-        # Cadre et Titre sur chaque page
+        # Cadre extérieur fixe
         self.rect(10, 10, 190, 277)
         self.set_font("Arial", "B", 15)
+        self.set_y(15)
         self.cell(0, 12, "CONTRAT DE PHASE D'USINAGE", 1, 1, "C")
-        self.ln(5)
 
 # --- INTERFACE ---
 with st.sidebar:
@@ -24,10 +24,9 @@ with st.sidebar:
     machine = st.selectbox("Machine-Outil", ["Haas Mini Mill", "Haas VF2", "Huron", "Somab", "Tour CN"])
     
     st.divider()
-    # Nombre de positions dynamique
-    nb_pos = st.number_input("Nombre de positions à créer", min_value=1, max_value=5, value=2)
+    nb_pos = st.number_input("Nombre de positions", min_value=1, max_value=5, value=2)
 
-# Stockage des données de chaque position
+# Stockage des données
 positions_data = []
 
 for i in range(int(nb_pos)):
@@ -52,15 +51,16 @@ for i in range(int(nb_pos)):
     positions_data.append({"img": img, "df": df, "num": i+1})
     st.divider()
 
-# --- GÉNÉRATION PDF MULTI-PAGES ---
+# --- GÉNÉRATION PDF ---
 def generer_pdf_complet(nom, cao, mat, mach, positions):
     pdf = PDF()
     
     for pos in positions:
         pdf.add_page()
-        pdf.set_font("Arial", "B", 9)
         
-        # Entête (Répété sur chaque page)
+        # 1. Entête (fixé en haut après le titre)
+        pdf.set_font("Arial", "B", 9)
+        pdf.set_y(30) 
         pdf.cell(95, 8, f" Piece : {nom}", 1, 0)
         pdf.cell(95, 8, f" CAO : {cao}", 1, 1)
         
@@ -69,49 +69,56 @@ def generer_pdf_complet(nom, cao, mat, mach, positions):
         pdf.cell(75, 8, f" Matiere : {mat}", 1, 0)
         pdf.cell(75, 8, f" Machine : {mach}", 1, 1)
         
-        # Espace Croquis (Plus grand car une seule pos par page)
-        pdf.ln(5)
+        # 2. Zone Croquis (Position fixe sur chaque page)
+        pdf.set_y(55) # On force le départ du croquis à 55mm du haut
         if pos['img']:
             img_pil = Image.open(pos['img'])
+            # Redimensionnement propre pour éviter les débordements
+            img_pil.thumbnail((500, 500)) 
             img_path = f"temp_img_{pos['num']}.png"
             img_pil.save(img_path)
+            # On centre l'image : x=45, largeur=120
             pdf.image(img_path, x=45, y=55, w=120)
-            pdf.ln(90)
+            pdf.set_y(150) # On force le tableau à commencer à 150mm du haut
         else:
-            pdf.cell(190, 60, f"ZONE CROQUIS POS {pos['num']}", 1, 1, "C")
+            pdf.cell(190, 80, f"SANS CROQUIS POS {pos['num']}", 1, 1, "C")
             pdf.ln(5)
 
-        # Tableau
-        pdf.set_font("Arial", "B", 8)
-        widths = [12, 55, 40, 15, 23, 23, 22] 
+        # 3. Tableau (Position fixe sous le croquis)
+        pdf.set_font("Arial", "B", 7)
+        widths = [10, 50, 45, 15, 25, 23, 22] 
         headers = pos['df'].columns
+        
+        # Dessin entête tableau
+        pdf.set_fill_color(220, 220, 220)
         for i in range(len(headers)):
-            pdf.cell(widths[i], 10, headers[i], 1, 0, "C", fill=True)
+            pdf.cell(widths[i], 8, headers[i], 1, 0, "C", fill=True)
         pdf.ln()
         
-        pdf.set_font("Arial", "", 8)
+        # Dessin lignes tableau
+        pdf.set_font("Arial", "", 7)
         for index, row in pos['df'].iterrows():
-            line_height = 8
-            curr_y = pdf.get_y()
+            line_height = 7
+            start_y = pdf.get_y()
             for i in range(len(row)):
                 valeur = str(row[i]).replace("⌀", "D.").replace("ø", "d")
                 valeur_propre = valeur.encode('latin-1', 'replace').decode('latin-1')
                 curr_x = pdf.get_x()
                 pdf.multi_cell(widths[i], line_height, valeur_propre, border=1, align="C")
-                pdf.set_xy(curr_x + widths[i], curr_y)
+                pdf.set_xy(curr_x + widths[i], start_y)
             pdf.ln(line_height)
             
     return pdf.output()
 
 # --- BOUTON FINAL ---
-if st.button("💾 Générer le PDF Complet (Toutes les positions)"):
+if st.button("💾 Générer le Dossier Complet"):
     try:
         pdf_bytes = generer_pdf_complet(nom_piece, designation_cao, matiere, machine, positions_data)
-        st.success(f"✅ PDF avec {len(positions_data)} page(s) généré !")
+        st.success(f"✅ Dossier de {len(positions_data)} page(s) prêt !")
         st.download_button(
-            label="📥 Télécharger le dossier de phase",
+            label="📥 Télécharger le PDF",
             data=bytes(pdf_bytes),
-            file_name=f"Dossier_Phase_{nom_piece}.pdf",
+            file_name=f"Dossier_{nom_piece}.pdf",
             mime="application/pdf"
         )
     except Exception as e:
