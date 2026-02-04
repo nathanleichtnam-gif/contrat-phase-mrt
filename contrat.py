@@ -6,26 +6,19 @@ import io
 
 st.set_page_config(page_title="Générateur Pro ENIM", layout="wide")
 
-# --- STYLE CSS POUR L'INTERFACE ---
-st.markdown("""
-    <style>
-    .main { background-color: #f5f7f9; }
-    .stButton>button { width: 100%; background-color: #007bff; color: white; }
-    </style>
-    """, unsafe_allow_html=True)
-
+# --- STYLE ---
+st.markdown("<style>.stButton>button { width: 100%; background-color: #007bff; color: white; }</style>", unsafe_allow_html=True)
 st.title("🚀 Générateur de Contrats de Phase ENIM")
 
-# --- CLASSE PDF AVEC GESTION DU CADRE ---
+# --- CLASSE PDF ---
 class PDF(FPDF):
     def header(self):
-        # Cadre extérieur (10mm de marge)
         self.rect(10, 10, 190, 277)
         self.set_font("Arial", "B", 15)
         self.cell(0, 12, "CONTRAT DE PHASE D'USINAGE", 1, 1, "C")
         self.ln(5)
 
-# --- INTERFACE DE SAISIE (BARRE LATÉRALE) ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.header("📦 Configuration")
     nom_piece = st.text_input("Nom de la pièce", "PIÈCE_ABC")
@@ -34,11 +27,11 @@ with st.sidebar:
     matiere = st.text_input("Matière", "S300 / 35NiCrMo16")
     machine = st.selectbox("Machine-Outil", ["Haas Mini Mill", "Haas VF2", "Huron", "Somab", "Tour CN"])
 
-# --- SECTION CROQUIS ---
+# --- CROQUIS ---
 st.subheader(f"🖼️ Croquis du Positionnement n°{num_pos}")
-image_file = st.file_uploader("Importer le croquis (Mise en position + Cotes)", type=['png', 'jpg', 'jpeg'])
+image_file = st.file_uploader("Importer le croquis", type=['png', 'jpg', 'jpeg'])
 
-# --- SECTION TABLEAU TECHNIQUE ---
+# --- TABLEAU ---
 st.subheader("📋 Opérations et Paramètres")
 data = {
     "N° Op": [10, 20, 30],
@@ -52,12 +45,15 @@ data = {
 df = pd.DataFrame(data)
 edited_df = st.data_editor(df, num_rows="dynamic", use_container_width=True)
 
-# --- FONCTION DE GÉNÉRATION DU PDF ---
+# --- GÉNÉRATION PDF ---
 def generer_pdf(nom, cao, pos, mat, mach, table, img):
     pdf = PDF()
     pdf.add_page()
     
-    # Bloc Entête (Largeur totale 190mm)
+    # Entête
     pdf.set_font("Arial", "B", 9)
-    pdf.cell(95, 8, f" Piece : {nom}", 1)
-    pdf.cell(95, 8, f" CAO : {cao}", 1
+    pdf.cell(95, 8, f" Piece : {nom}", 1, 0)
+    pdf.cell(95, 8, f" CAO : {cao}", 1, 1)
+    
+    pdf.set_fill_color(240, 240, 240)
+    pdf.cell(40, 8, f" POS N : {pos}", 1,
