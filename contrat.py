@@ -50,10 +50,11 @@ def generer_pdf(nom, cao, pos, mat, mach, table, img):
     pdf = PDF()
     pdf.add_page()
     
-    # Entête
+    # Entête - Ligne 1
     pdf.set_font("Arial", "B", 9)
     pdf.cell(95, 8, f" Piece : {nom}", 1, 0)
     pdf.cell(95, 8, f" CAO : {cao}", 1, 1)
     
+    # Entête - Ligne 2 (C'est ici qu'était l'erreur)
     pdf.set_fill_color(240, 240, 240)
-    pdf.cell(40, 8, f" POS N : {pos}", 1,
+    pdf.cell(40, 8, f" POS N : {pos}",
